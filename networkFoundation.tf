@@ -1,3 +1,9 @@
+# To do:
+# Create variables file to pull # of students to create loop
+# Create students prefix (studentXX) for naming standards
+# Create loop to populate and create different VPCs and associated objects
+# Pull firewall rules to firewallRules.tf for students to run
+
 # This module has been tested with Terraform 0.12, 0.13 and 0.14.
 terraform {
   required_version = "> 0.11"
