@@ -1,0 +1,117 @@
+# This module has been tested with Terraform 0.12, 0.13 and 0.14.
+terraform {
+  required_version = "> 0.11"
+}
+
+# Service account impersonation (if enabled) and Google provider setup is
+# handled in providers.tf
+
+# Generate a random prefix
+resource "random_pet" "prefix" {
+  length = 1
+  keepers = {
+    project_id = var.project_id
+  }
+}
+
+locals {
+  short_region = replace(var.region, "/^[^-]+-([^0-9-]+)[0-9]$/", "$1")
+}
+
+# Explicitly create each VPC as this will work on all supported Terraform versions
+
+# Alpha - allows internet egress if the instance(s) have public IPs on nic0
+module "external" {
+  source                                 = "terraform-google-modules/network/google"
+  version                                = "3.0.0"
+  project_id                             = var.project_id
+  network_name                           = format("%s-alpha", random_pet.prefix.id)
+  delete_default_internet_gateway_routes = false
+  subnets = [
+    {
+      subnet_name           = format("alpha-%s", local.short_region)
+      subnet_ip             = "172.16.0.0/16"
+      subnet_region         = var.region
+      subnet_private_access = false
+    }
+  ]
+}
+
+# Management - a NAT gateway will be provisioned to support egress for control-plane
+# download and installation of libraries, reaching Google APIs, etc.
+module "mgmt" {
+  source                                 = "terraform-google-modules/network/google"
+  version                                = "3.0.0"
+  project_id                             = var.project_id
+  network_name                           = format("%s-beta", random_pet.prefix.id)
+  delete_default_internet_gateway_routes = false
+  subnets = [
+    {
+      subnet_name           = format("beta-%s", local.short_region)
+      subnet_ip             = "172.17.0.0/16"
+      subnet_region         = var.region
+      subnet_private_access = false
+    }
+  ]
+}
+
+# Gamma - default routes are deleted
+module "internal" {
+  source                                 = "terraform-google-modules/network/google"
+  version                                = "3.0.0"
+  project_id                             = var.project_id
+  network_name                           = format("%s-gamma", random_pet.prefix.id)
+  delete_default_internet_gateway_routes = true
+  subnets = [
+    {
+      subnet_name           = format("gamma-%s", local.short_region)
+      subnet_ip             = "172.18.0.0/16"
+      subnet_region         = var.region
+      subnet_private_access = false
+    }
+  ]
+}
+
+# Create a NAT gateway on the beta network - this allows the BIG-IP instances
+# to download F5 libraries, use Secret Manager, etc, on management interface
+# which is the only interface configured until DO is applied.
+module "mgmt-nat" {
+  source                             = "terraform-google-modules/cloud-nat/google"
+  version                            = "~> 1.3.0"
+  project_id                         = var.project_id
+  region                             = var.region
+  name                               = format("%s-mgmt", random_pet.prefix.id)
+  router                             = format("%s-mgmt", random_pet.prefix.id)
+  create_router                      = true
+  source_subnetwork_ip_ranges_to_nat = "LIST_OF_SUBNETWORKS"
+  network                            = module.mgmt.network_self_link
+  subnetworks = [
+    {
+      name                     = element(module.mgmt.subnets_self_links, 0)
+      source_ip_ranges_to_nat  = ["ALL_IP_RANGES"]
+      secondary_ip_range_names = []
+    },
+  ]
+}
+
+# need to define source var.admin_source_cidrs as 0.0.0.0/0 because we are going to use strong passwords 
+# and/or ssh-key deployments
+resource "google_compute_firewall" "admin_mgmt" {
+  project                 = var.project_id
+  name                    = format("%s-mgmt-allow-admin-access", random_pet.prefix.id)
+  network                 = module.mgmt.network_self_link
+  description             = format("Allow external admin access on mgmt (%s)", random_pet.prefix.id)
+  direction               = "INGRESS"
+  source_ranges           = var.admin_source_cidrs
+  target_service_accounts = [module.sa.emails["bigip"]]
+  allow {
+    protocol = "tcp"
+    ports = [
+      22,
+      443,
+    ]
+  }
+  allow {
+    protocol = "icmp"
+  }
+}
