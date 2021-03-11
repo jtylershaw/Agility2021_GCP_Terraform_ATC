@@ -1,0 +1,4 @@
+numberOfStudents = 20
+project_id = "my-gcp-project-id"
+region = "us-central1"
+admin_source_cidrs = ["1.2.3.4/32", "10.10.100.0/16"]
