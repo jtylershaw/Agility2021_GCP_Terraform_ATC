@@ -9,17 +9,6 @@ terraform {
   required_version = "> 0.11"
 }
 
-# Service account impersonation (if enabled) and Google provider setup is
-# handled in providers.tf
-
-# Generate a random prefix
-resource "random_pet" "prefix" {
-  length = 1
-  keepers = {
-    project_id = var.project_id
-  }
-}
-
 locals {
   short_region = replace(var.region, "/^[^-]+-([^0-9-]+)[0-9]$/", "$1")
 }
@@ -28,7 +17,7 @@ locals {
 
 # Alpha - allows internet egress if the instance(s) have public IPs on nic0
 module "external" {
-  count 				 = var.numberOfStudents
+  count                                  = var.numberOfStudents
   source                                 = "terraform-google-modules/network/google"
   version                                = "3.0.0"
   project_id                             = var.project_id
@@ -107,14 +96,14 @@ module "mgmt-nat" {
 # need to define source var.admin_source_cidrs as 0.0.0.0/0 because we are going to use strong passwords 
 ## and/or ssh-key deployments
 resource "google_compute_firewall" "admin_mgmt" {
-  count			  = var.numberOfStudents
-  project                 = var.project_id
-  name                    = format("student%s-mgmt-allow-admin-access", count.index)
-  network                 = module.mgmt[count.index].network_self_link
-  description             = format("Allow external admin access on mgmt (student%s)", count.index)
-  direction               = "INGRESS"
-  source_ranges           = var.admin_source_cidrs
-#  target_service_accounts = [module.sa.emails["bigip"]]
+  count         = var.numberOfStudents
+  project       = var.project_id
+  name          = format("student%s-mgmt-allow-admin-access", count.index)
+  network       = module.mgmt[count.index].network_self_link
+  description   = format("Allow external admin access on mgmt (student%s)", count.index)
+  direction     = "INGRESS"
+  source_ranges = var.admin_source_cidrs
+  #  target_service_accounts = [module.sa.emails["bigip"]]
   allow {
     protocol = "tcp"
     ports = [
