@@ -44,7 +44,7 @@ module "mgmt" {
   delete_default_internet_gateway_routes = false
   subnets = [
     {
-      subnet_name           = format("studnet%s-mgmt-%s", count.index, local.short_region)
+      subnet_name           = format("student%s-mgmt-%s", count.index, local.short_region)
       subnet_ip             = "172.17.0.0/16"
       subnet_region         = var.region
       subnet_private_access = false
