@@ -70,29 +70,6 @@ module "internal" {
   ]
 }
 
-# Create a NAT gateway on the mgmt network - this allows the BIG-IP instances
-# to download F5 libraries, use Secret Manager, etc, on management interface
-# which is the only interface configured until DO is applied.
-module "mgmt-nat" {
-  count                              = var.numberOfStudents
-  source                             = "terraform-google-modules/cloud-nat/google"
-  version                            = "~> 1.3.0"
-  project_id                         = var.project_id
-  region                             = var.region
-  name                               = format("student%s-mgmt", count.index)
-  router                             = format("student%s-mgmt", count.index)
-  create_router                      = true
-  source_subnetwork_ip_ranges_to_nat = "LIST_OF_SUBNETWORKS"
-  network                            = module.mgmt[count.index].network_self_link
-  subnetworks = [
-    {
-      name                     = element(module.mgmt[count.index].subnets_self_links, 0)
-      source_ip_ranges_to_nat  = ["ALL_IP_RANGES"]
-      secondary_ip_range_names = []
-    },
-  ]
-}
-
 # need to define source var.admin_source_cidrs as 0.0.0.0/0 because we are going to use strong passwords 
 ## and/or ssh-key deployments
 resource "google_compute_firewall" "admin_mgmt" {
