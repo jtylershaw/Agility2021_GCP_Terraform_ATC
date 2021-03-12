@@ -1,6 +1,10 @@
-variable "numberOfStudents" {
-  default = 20
+variable "student_id" {
+  type = number
+  description = <<EOD
+Your student id number for the lab.
+EOD
 }
+
 variable "project_id" {
   type        = string
   default = "f5-gcs-4261-sales-agility2021"
@@ -8,6 +12,7 @@ variable "project_id" {
 The GCP project identifier to use for testing.
 EOD
 }
+
 variable "region" {
   type        = string
   default     = "us-west1"
@@ -15,12 +20,11 @@ variable "region" {
 The region to deploy test resources. Default is 'us-west1'.
 EOD
 }
-variable "admin_source_cidrs" {
-  type        = list(string)
-  default     = ["0.0.0.0/0"]
+
+variable "bigip_image" {
+  type = string
+  default = "projects/f5-7626-networks-public/global/images/f5-bigip-15-1-2-1-0-0-10-payg-good-25mbps-210115160742"
   description = <<EOD
-The list of source CIDRs that will be added to firewall rules to allow admin
-access to BIG-IPs (SSH and GUI) on alpha and beta subnetworks. Only useful if
-instance has a public IP address.
+The BIG-IP base image to use in lab.
 EOD
 }
