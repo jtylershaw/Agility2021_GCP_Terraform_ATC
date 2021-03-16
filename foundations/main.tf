@@ -92,3 +92,8 @@ resource "google_compute_firewall" "admin_mgmt" {
     protocol = "icmp"
   }
 }
+
+resource "google_project_service" "api" {
+  project = var.project_id
+  service = "iam.googleapis.com"
+}
