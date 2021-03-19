@@ -92,28 +92,6 @@ resource "google_compute_firewall" "admin_mgmt" {
   }
 }
 
-# need to define source var.admin_source_cidrs as 0.0.0.0/0 because we are going to use strong passwords 
-## and/or ssh-key deployments
-resource "google_compute_firewall" "admin_int" {
-  count         = var.numberOfStudents
-  project       = var.project_id
-  name          = format("student%s-int-allow-admin-access", count.index)
-  network       = module.internal[count.index].network_self_link
-  description   = format("Allow external admin access on internal (student%s)", count.index)
-  direction     = "INGRESS"
-  source_ranges = var.admin_source_cidrs
-  allow {
-    protocol = "tcp"
-    ports = [
-      22,
-      80,
-    ]
-  }
-  allow {
-    protocol = "icmp"
-  }
-}
-
 resource "google_project_service" "apis" {
   for_each = toset(var.apis)
   project = var.project_id
