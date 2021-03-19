@@ -15,7 +15,7 @@ locals {
 
 # Explicitly create each VPC as this will work on all supported Terraform versions
 
-# Alpha - allows internet egress if the instance(s) have public IPs on nic0
+# External
 module "external" {
   count                                  = var.numberOfStudents
   source                                 = "terraform-google-modules/network/google"
@@ -33,8 +33,7 @@ module "external" {
   ]
 }
 
-# Management - a NAT gateway will be provisioned to support egress for control-plane
-# download and installation of libraries, reaching Google APIs, etc.
+# Management
 module "mgmt" {
   count                                  = var.numberOfStudents
   source                                 = "terraform-google-modules/network/google"
@@ -52,14 +51,14 @@ module "mgmt" {
   ]
 }
 
-# Gamma - default routes are deleted
+# Internal
 module "internal" {
   count                                  = var.numberOfStudents
   source                                 = "terraform-google-modules/network/google"
   version                                = "3.0.0"
   project_id                             = var.project_id
   network_name                           = format("student%s-internal", count.index)
-  delete_default_internet_gateway_routes = true
+  delete_default_internet_gateway_routes = false
   subnets = [
     {
       subnet_name           = format("student%s-internal-%s", count.index, local.short_region)
@@ -93,7 +92,35 @@ resource "google_compute_firewall" "admin_mgmt" {
   }
 }
 
-resource "google_project_service" "api" {
+# need to define source var.admin_source_cidrs as 0.0.0.0/0 because we are going to use strong passwords 
+## and/or ssh-key deployments
+resource "google_compute_firewall" "admin_int" {
+  count         = var.numberOfStudents
+  project       = var.project_id
+  name          = format("student%s-int-allow-admin-access", count.index)
+  network       = module.internal[count.index].network_self_link
+  description   = format("Allow external admin access on internal (student%s)", count.index)
+  direction     = "INGRESS"
+  source_ranges = var.admin_source_cidrs
+  allow {
+    protocol = "tcp"
+    ports = [
+      22,
+      80,
+    ]
+  }
+  allow {
+    protocol = "icmp"
+  }
+}
+
+resource "google_project_service" "apis" {
+  for_each = toset(var.apis)
   project = var.project_id
-  service = "iam.googleapis.com"
+  service = each.value
+  # TODO: @jtylershaw @El-Coder @snowblind-
+  # In a shared project, destroying these resources shouldn't disable the GCP
+  # APIs in case another user/team is using them. Change to true if this isn't a
+  # concern.
+  disable_on_destroy = false
 }
