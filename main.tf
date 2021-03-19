@@ -143,7 +143,7 @@ module "cfe_bucket" {
 #  - F5 BIG-IP module doesn't handle NIC ip assignments correctly, use @memes
 # fork until resolved.
 module "bigip_1" {
-  source = "git::https://github.com/El-Coder/terraform-gcp-bigip-module?ref=refactor/agility2021"
+  source = "git::https://github.com/memes/terraform-gcp-bigip-module?ref=refactor/agility2021"
   prefix = format("student%d-1", var.student_id)
   project_id = var.project_id
   zone = element(random_shuffle.zones.result, 0)
@@ -178,7 +178,7 @@ module "bigip_1" {
 }
 
 module "bigip_2" {
-  source = "git::https://github.com/El-Coder/terraform-gcp-bigip-module?ref=refactor/agility2021"
+  source = "git::https://github.com/memes/terraform-gcp-bigip-module?ref=refactor/agility2021"
   prefix = format("student%d-2", var.student_id)
   project_id = var.project_id
   zone = element(random_shuffle.zones.result, 1)
