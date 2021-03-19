@@ -96,4 +96,5 @@ resource "google_compute_firewall" "admin_mgmt" {
 resource "google_project_service" "api" {
   project = var.project_id
   service = "iam.googleapis.com"
+  disable_on_destroy = false
 }

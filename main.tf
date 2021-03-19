@@ -143,7 +143,7 @@ module "cfe_bucket" {
 #  - F5 BIG-IP module doesn't handle NIC ip assignments correctly, use @memes
 # fork until resolved.
 module "bigip_1" {
-  source = "git::https://github.com/memes/terraform-gcp-bigip-module?ref=refactor/agility2021"
+  source = "git::https://github.com/El-Coder/terraform-gcp-bigip-module?ref=refactor/agility2021"
   prefix = format("student%d-1", var.student_id)
   project_id = var.project_id
   zone = element(random_shuffle.zones.result, 0)
@@ -178,7 +178,7 @@ module "bigip_1" {
 }
 
 module "bigip_2" {
-  source = "git::https://github.com/memes/terraform-gcp-bigip-module?ref=refactor/agility2021"
+  source = "git::https://github.com/El-Coder/terraform-gcp-bigip-module?ref=refactor/agility2021"
   prefix = format("student%d-2", var.student_id)
   project_id = var.project_id
   zone = element(random_shuffle.zones.result, 1)
@@ -212,3 +212,52 @@ module "bigip_2" {
   ]
   depends_on = [module.bigip_sa, module.bigip_admin_password]
 }
+
+# RENDER TEMPLATE FILE
+
+data "template_file" "postman" {
+  # depends_on = [null_resource.ecdsa_certs]
+template = file("./postman_template.json")
+vars = { 
+    GCP_SECRET_ACCESS_KEY = module.bigip_2.bigip_password
+    GCP_ACCESS_KEY_ID = module.bigip_2.service_account
+    BIGIP_ADMIN = module.bigip_2.f5_username
+    BIGIP_ADMIN_PASSWORD = module.bigip_2.bigip_password
+    BIGIP1_MGMT_IP_ADDRESS = module.bigip_1.mgmtPublicIP
+    BIGIP2_MGMT_IP_ADDRESS = module.bigip_2.mgmtPublicIP
+    PROJECT_ID = var.project_id
+    # BIGIP1_MGMT_PRIVATE_ADDRESS = aws_instance.bigip1.private_ip
+    # BIGIP2_MGMT_PRIVATE_ADDRESS = aws_instance.bigip2.private_ip
+    # BIGIP1_TRAFFIC_PRIVATE_ADDRESS = var.bigip1_private_ip[0]
+    # BIGIP2_TRAFFIC_PRIVATE_ADDRESS = var.bigip2_private_ip[0]
+    # WEB1_PRIVATE_IP_ADDRESS = aws_instance.example-a.private_ip
+    # WEB2_PRIVATE_IP_ADDRESS = aws_instance.example-b.private_ip
+    # BIGIP1_DEFAULT_ROUTE = var.bigip1_default_route
+    # BIGIP2_DEFAULT_ROUTE = var.bigip2_default_route
+    # BIGIP1_EXAMPLE01_ADDRESS = var.bigip1_private_ip[1]
+    # BIGIP1_EXAMPLE02_ADDRESS = var.bigip1_private_ip[2]
+    # BIGIP1_EXAMPLE03_ADDRESS = var.bigip1_private_ip[3]
+    # BIGIP1_EXAMPLE04_ADDRESS = var.bigip1_private_ip[4]
+    # BIGIP2_EXAMPLE01_ADDRESS = var.bigip2_private_ip[1]
+    # BIGIP2_EXAMPLE02_ADDRESS = var.bigip2_private_ip[2]
+    # BIGIP2_EXAMPLE03_ADDRESS = var.bigip2_private_ip[3]
+    # BIGIP2_EXAMPLE04_ADDRESS = var.bigip2_private_ip[4]
+    # EXAMPLE01A_ECDSA_CERT = fileexists("example01a.f5lab.dev.cert") ? file("example01a.f5lab.dev.cert") : "null"
+    # EXAMPLE01A_ECDSA_KEY = fileexists("example01a.f5lab.dev.key") ? file("example01a.f5lab.dev.key") : "null"
+    # EXAMPLE01B_ECDSA_CERT = fileexists("example01b.f5lab.dev.cert") ? file("example01b.f5lab.dev.cert") : "null"
+    # EXAMPLE01B_ECDSA_KEY = fileexists("example01b.f5lab.dev.key") ? file("example01b.f5lab.dev.key") : "null"
+}
+}
+
+
+resource "local_file" "postman_rendered" {
+  # depends_on = [null_resource.ecdsa_certs]
+content = data.template_file.postman.rendered
+filename = "postman_rendered.json"
+}
+
+# resource "null_resource" "ecdsa_certs" {
+#     provisioner "local-exec" {
+#     command = "create-ecdsa-certs.sh"
+#   }
+# }
