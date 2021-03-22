@@ -140,10 +140,8 @@ module "cfe_bucket" {
 # Standup BIG-IP VMs for students
 # TODO: @memes @jtylershaw @El-Coder - review if F5 module is ready for lab
 #  - F5 BIG-IP module does not perform NIC swap - mgmt is NIC0
-#  - F5 BIG-IP module doesn't handle NIC ip assignments correctly, use @memes
-# fork until resolved.
 module "bigip_1" {
-  source = "git::https://github.com/memes/terraform-gcp-bigip-module?ref=refactor/agility2021"
+  source = "git::https://github.com/f5devcentral/terraform-gcp-bigip-module"
   prefix = format("student%d-1", var.student_id)
   project_id = var.project_id
   zone = element(random_shuffle.zones.result, 0)
@@ -178,7 +176,7 @@ module "bigip_1" {
 }
 
 module "bigip_2" {
-  source = "git::https://github.com/memes/terraform-gcp-bigip-module?ref=refactor/agility2021"
+  source = "git::https://github.com/f5devcentral/terraform-gcp-bigip-module"
   prefix = format("student%d-2", var.student_id)
   project_id = var.project_id
   zone = element(random_shuffle.zones.result, 1)
