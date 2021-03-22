@@ -8,24 +8,37 @@ provider "google" {
 }
 
 locals {
-  # The generated service account email identifier is predictable; use this value
-  # anywhere BIG-IP dedicated service account is needed.
+  # The generated service account email identifiers are predictable; use these
+  # values anywhere a reference to a dedicated service account is needed.
   bigip_service_account = format("student%d-bigip@%s.iam.gserviceaccount.com", var.student_id, var.project_id)
+  backend_service_account = format("student%d-backend@%s.iam.gserviceaccount.com", var.student_id, var.project_id)
 
   # CFE key:value label - will be applied to GCS buckets, VMs, and other resources
   # that need to be managed by CFE at some point.
   cfe_label_key = "f5-cfe-failover-label"
   cfe_label_value = format("student%d", var.student_id)
 
+  # Discovery key:value label - will be used by Service Discovery to add backend VMs
+  backend_label_key = "f5-service-discovery"
+  backend_label_value = format("student%d", var.student_id)
+
+  # Backend port - 80?
+  backend_port = 80
+
   # Subnets are named using an abbreviated form of region
   short_region = replace(var.region, "/^[^-]+-([^0-9-]+)[0-9]$/", "$1")
 
   # Labels to be applied to VMs
   # TODO: @jtylershaw @El-Coder - anything else to add?
-  labels = {
+  cfe_labels = {
     owner = format("student%d", var.student_id)
     # Make sure CFE label is present
     (local.cfe_label_key) = local.cfe_label_value
+  }
+  backend_labels = {
+    owner = format("student%d", var.student_id)
+    # Make sure CFE label is present
+    (local.backend_label_key) = local.backend_label_value
   }
 }
 
@@ -63,14 +76,15 @@ resource "random_shuffle" "zones" {
   }
 }
 
-# Create a service account for BIG-IP to use. This service account will be
-# granted ability to send logs and metrics to Google Cloud Operations, if wanted.
-module "bigip_sa" {
+# Create a service account for BIG-IP and backend services to use. These service
+# accounts will be granted ability to send logs and metrics to Google Cloud
+# Operations, if wanted.
+module "service_accounts" {
   source     = "terraform-google-modules/service-accounts/google"
   version    = "3.0.1"
   project_id = var.project_id
   prefix     = format("student%d", var.student_id)
-  names      = ["bigip"]
+  names      = ["bigip", "backend"]
   project_roles = [
     "${var.project_id}=>roles/logging.logWriter",
     "${var.project_id}=>roles/monitoring.metricWriter",
@@ -121,7 +135,7 @@ module "cfe_bucket" {
   source     = "terraform-google-modules/cloud-storage/google"
   version    = "1.7.2"
   project_id = var.project_id
-  prefix     = format("student%d", var.student_id)
+  prefix     = format("student%d-%s", var.student_id, var.project_id)
   names      = ["cfe-state"]
   force_destroy = {
     "cfe-state" = true
@@ -132,16 +146,14 @@ module "cfe_bucket" {
   set_viewer_roles  = true
   viewers           = [format("serviceAccount:%s", local.bigip_service_account)]
   # Label the bucket with the CFE pair, as supplied to CFE module
-  labels = {
-    (local.cfe_label_key) = local.cfe_label_value
-  }
+  labels = local.cfe_labels
 }
 
 # Standup BIG-IP VMs for students
 # TODO: @memes @jtylershaw @El-Coder - review if F5 module is ready for lab
 #  - F5 BIG-IP module does not perform NIC swap - mgmt is NIC0
 module "bigip_1" {
-  source = "git::https://github.com/f5devcentral/terraform-gcp-bigip-module"
+  source = "git::https://github.com/memes/terraform-gcp-bigip-module?ref=refactor/agility2021"
   prefix = format("student%d-1", var.student_id)
   project_id = var.project_id
   zone = element(random_shuffle.zones.result, 0)
@@ -149,7 +161,7 @@ module "bigip_1" {
   image = var.bigip_image
   gcp_secret_manager_authentication = true
   gcp_secret_name = format("student%d-bigip-admin-key", var.student_id)
-  labels = local.labels
+  labels = local.cfe_labels
   mgmt_subnet_ids = [
     {
       subnet_id = data.google_compute_subnetwork.mgmt.self_link
@@ -172,11 +184,11 @@ module "bigip_1" {
       private_ip_primary = "172.18.100.1"
     },
   ]
-  depends_on = [module.bigip_sa, module.bigip_admin_password]
+  depends_on = [module.service_accounts, module.bigip_admin_password]
 }
 
 module "bigip_2" {
-  source = "git::https://github.com/f5devcentral/terraform-gcp-bigip-module"
+  source = "git::https://github.com/memes/terraform-gcp-bigip-module?ref=refactor/agility2021"
   prefix = format("student%d-2", var.student_id)
   project_id = var.project_id
   zone = element(random_shuffle.zones.result, 1)
@@ -184,7 +196,7 @@ module "bigip_2" {
   image = var.bigip_image
   gcp_secret_manager_authentication = true
   gcp_secret_name = format("student%d-bigip-admin-key", var.student_id)
-  labels = local.labels
+  labels = local.cfe_labels
   mgmt_subnet_ids = [
     {
       subnet_id = data.google_compute_subnetwork.mgmt.self_link
@@ -208,7 +220,92 @@ module "bigip_2" {
       private_ip_primary = "172.18.100.2"
     },
   ]
-  depends_on = [module.bigip_sa, module.bigip_admin_password]
+  depends_on = [module.service_accounts, module.bigip_admin_password]
+}
+
+
+# Spin up backend(s)
+resource "google_compute_instance" "backend" {
+  # TODO: @El-Coder @jtylershaw @snowblind- - How many backend VMs per student?
+  count = 2
+  name = format("student%d-backend-%d", var.student_id, count.index)
+  zone = element(random_shuffle.zones.result, count.index)
+  labels = local.backend_labels
+  machine_type = "e2-medium"
+  service_account {
+    email = local.backend_service_account
+    scopes = ["https://www.googleapis.com/auth/cloud-platform"]
+  }
+
+  boot_disk {
+    initialize_params {
+      image = "cos-cloud/cos-stable"
+    }
+  }
+  
+  # Attach the instance to internal VPC and give it a public IP; this allows the
+  # instance to pull containers from Docker Hub without NAT, GCR, etc.
+  network_interface {
+    subnetwork = data.google_compute_subnetwork.internal.self_link
+    access_config {}
+  }
+
+  metadata = {
+    enable-oslogin = "TRUE"
+    user-data = <<EOUD
+#cloud-config
+
+write_files:
+  - path: /etc/systemd/system/f5demoapp.service
+    permissions: 0644
+    owner: root
+    content: |
+      [Unit]
+      Description=F5 Agility Lab demoapp service
+      Wants=gcr-online.target
+      After=gcr-onlin.target
+
+      [Service]
+      ExecStart=/usr/bin/docker run --name f5demoapp \
+        --restart always \
+        --publish ${local.backend_port}:${local.backend_port} \
+        --env F5DEMO_APP=website \
+        --env F5DEMO_NODENAME="${format("student%d-backend-%d", var.student_id, count.index)}: Zone: ${element(random_shuffle.zones.result, count.index)}" \
+        chen23/f5-demo-app:latest
+      ExecStop=/usr/bin/docker stop f5demoapp
+      ExecStopPost=/usr/bin/docker rm f5demoapp
+
+runcmd:
+  - systemctl daemon-reload
+  - systemctl start f5demoapp.service
+EOUD
+  }
+
+  depends_on = [module.service_accounts]
+}
+
+# Allow BIG-IP instances to reach backend services
+resource "google_compute_firewall" "bigip_backend" {
+  project       = var.project_id
+  name          = format("student%d-int-allow-bigip-backend", var.student_id)
+  network       = data.google_compute_subnetwork.internal.network
+  description   = format("Allow BIG-IP to backend access on internal (student%d)", var.student_id)
+  direction     = "INGRESS"
+  source_service_accounts = [
+    local.bigip_service_account,
+  ]
+  target_service_accounts = [
+    local.backend_service_account,
+  ]
+  allow {
+    protocol = "tcp"
+    ports = [
+      local.backend_port,
+    ]
+  }
+  allow {
+    protocol = "icmp"
+  }
 }
 
 # RENDER TEMPLATE FILE
@@ -259,3 +356,4 @@ filename = "postman_rendered.json"
 #     command = "create-ecdsa-certs.sh"
 #   }
 # }
+
