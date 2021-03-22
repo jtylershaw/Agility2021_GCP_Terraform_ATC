@@ -9,7 +9,7 @@ EOD
 
 variable "project_id" {
   type        = string
-  default     = "f5-gcs-4261-sales-agility2021"
+  default     = "f5-gcs-4261-sales-na-finserv"
   description = <<EOD
 The GCP project identifier to use for Agility lab.
 EOD
