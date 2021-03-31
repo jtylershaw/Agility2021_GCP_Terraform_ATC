@@ -49,14 +49,14 @@
       },
       "internal-self": {
           "class": "SelfIp",
-          "address": "172.18.100.1/32",
+          "address": "${ip}/32",
           "vlan": "internal",
           "allowService": "default",
           "trafficGroup": "traffic-group-local-only"
       },
       "external-self": {
            "class": "SelfIp",
-           "address": "172.16.100.1/32",
+           "address": "${externalip}/32",
            "vlan": "external",
            "allowService": "none",
            "trafficGroup": "traffic-group-local-only"
@@ -93,11 +93,11 @@
       },
       "configsync": {
           "class": "ConfigSync",
-          "configsyncIp": "${configsyncip}"
+          "configsyncIp": "${ip}"
       },
       "failoverAddress": {
           "class": "FailoverUnicast",
-          "address": "${failoverip}"
+          "address": "${ip}"
       }%{if DeviceTrust ~},
        "failoverGroup": {
           "class": "DeviceGroup",

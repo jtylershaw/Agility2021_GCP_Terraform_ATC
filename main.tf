@@ -349,8 +349,8 @@ count = 2
     bigip2_admin = module.bigip_2.f5_username
     bigip2_admin_password = module.bigip_2.bigip_password
     hostname = format("bigip%d.example.com",count.index+1)
-    configsyncip = format("172.18.100.%d", count.index+1)
-    failoverip = format("172.18.100.%d", count.index+1)
+    ip = format("172.18.100.%d", count.index+1)
+    externalip = format("172.16.100.%d", count.index+1)
     DeviceTrust = true
   })
   filename = format("./ATC_Declarations/Lab4.2-DO_HA/do_step%d.json", count.index+1)
@@ -364,8 +364,8 @@ count = 2
     bigip2_admin = module.bigip_2.f5_username
     bigip2_admin_password = module.bigip_2.bigip_password
     hostname = format("bigip%d.example.com",count.index+1)
-    configsyncip = format("172.18.100.%d", count.index+1)
-    failoverip = format("172.18.100.%d", count.index+1)
+    ip = format("172.18.100.%d", count.index+1)
+    externalip = format("172.16.100.%d", count.index+1)
     DeviceTrust = false
   })
   filename = format("./ATC_Declarations/Lab4.1-DO/do_step%d.json", count.index+1)
