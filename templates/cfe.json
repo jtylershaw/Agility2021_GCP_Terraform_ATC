@@ -1,0 +1,14 @@
+{
+  "class": "Cloud_Failover",
+  "environment": "gcp",
+  "externalStorage": {
+      "scopingTags": {
+          "f5_cloud_failover_label": "${label}"
+      }
+  },
+  "failoverAddresses": {
+      "scopingTags": {
+          "f5_cloud_failover_label": "example01"
+      }
+  }
+}

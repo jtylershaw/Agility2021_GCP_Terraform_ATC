@@ -1,0 +1,125 @@
+{
+  "schemaVersion": "1.18.0",
+  "class": "Device",
+  "async": true,
+  "label": "my BIG-IP declaration for declarative onboarding",
+  "Common": {
+      "class": "Tenant",
+      "hostname": "${hostname}",
+      "myDns": {
+          "class": "DNS",
+          "nameServers": [
+              "8.8.8.8",
+              "2001:4860:4860::8844"
+          ],
+          "search": [
+              "f5lab.dev"
+          ]
+      },
+      "myNtp": {
+          "class": "NTP",
+          "servers": [
+              "0.pool.ntp.org",
+              "1.pool.ntp.org",
+              "2.pool.ntp.org"
+          ],
+          "timezone": "UTC"
+      },
+       "internal": {
+          "class": "VLAN",
+          "tag": 4093,
+          "mtu": 1460,
+          "interfaces": [
+              {
+                  "name": "1.2",
+                  "tagged": false
+              }
+          ]
+      },
+     "external": {
+          "class": "VLAN",
+          "tag": 4092,
+          "mtu": 1460,
+          "interfaces": [
+              {
+                  "name": "1.1",
+                  "tagged": false
+              }
+          ]
+      },
+      "internal-self": {
+          "class": "SelfIp",
+          "address": "172.18.100.1/32",
+          "vlan": "internal",
+          "allowService": "default",
+          "trafficGroup": "traffic-group-local-only"
+      },
+      "external-self": {
+           "class": "SelfIp",
+           "address": "172.16.100.1/32",
+           "vlan": "external",
+           "allowService": "none",
+           "trafficGroup": "traffic-group-local-only"
+      },
+      "ext_gw_interface": {
+          "class": "Route",
+          "target": "external",
+          "network": "172.16.0.1/32",
+          "mtu": 1460
+      },
+      "ext_rt": {
+          "class": "Route",
+          "gw": "172.16.0.1",
+          "network": "172.16.0.0/16",
+          "mtu": 1460
+      },
+      "default": {
+          "class": "Route",
+          "gw": "172.16.0.1",
+          "network": "default",
+          "mtu": 1460
+      },
+      "int_gw_interface": {
+          "class": "Route",
+          "target": "internal",
+          "network": "172.18.0.1/32",
+          "mtu": 1460
+      },
+      "int_rt": {
+          "class": "Route",
+          "gw": "172.18.0.1",
+          "network": "172.18.0.0/16",
+          "mtu": 1460
+      },
+      "configsync": {
+          "class": "ConfigSync",
+          "configsyncIp": "${configsyncip}"
+      },
+      "failoverAddress": {
+          "class": "FailoverUnicast",
+          "address": "${failoverip}"
+      }%{if DeviceTrust ~},
+       "failoverGroup": {
+          "class": "DeviceGroup",
+          "type": "sync-failover",
+          "members": [
+              "172.18.100.1",
+              "172.18.100.2"
+          ],
+          "owner": "/Common/failoverGroup/members/0",
+          "autoSync": true,
+          "saveOnAutoSync": false,
+          "networkFailover": true,
+          "fullLoadOnSync": false,
+          "asmSync": false
+      },
+      "trust": {
+          "class": "DeviceTrust",
+          "localUsername": "${bigip_admin}",
+          "localPassword": "${bigip_admin_password}",
+          "remoteHost": "172.18.100.2",
+          "remoteUsername": "${bigip2_admin}",
+          "remotePassword": "${bigip2_admin_password}"
+      }%{endif}
+  }
+}
