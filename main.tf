@@ -386,7 +386,7 @@ resource "local_file" "AS3_2" {
   count = 2
   content = templatefile("./templates/as3_2.json",{
   bigip1_example01_address = format("172.16.0.14%d", count.index)
-  bigip2_example01_address = format("172.16.0.14%d", count.index)
+  bigip2_example01_address = format("172.16.0.14%d", count.index+1)
   })
   filename = format("./ATC_Declarations/Lab4.3-AS3/as3_step2.json")
 }
