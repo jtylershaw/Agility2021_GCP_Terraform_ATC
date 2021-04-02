@@ -17,9 +17,9 @@ EOD
 
 variable "region" {
   type        = string
-  default     = "us-west1"
+  default     = "us-east1"
   description = <<EOD
-The region to deploy test resources. Default is 'us-west1'.
+The region to deploy test resources. Default is 'us-east1'.
 EOD
 }
 
