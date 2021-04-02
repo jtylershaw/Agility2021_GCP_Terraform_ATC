@@ -351,6 +351,7 @@ count = 2
     hostname = format("bigip%d.example.com",count.index+1)
     ip = format("172.18.100.%d", count.index+1)
     externalip = format("172.16.100.%d", count.index+1)
+    remoteHost = format("172.16.100.%d", count.index+1==1 ? 2 : 1)
     DeviceTrust = true
   })
   filename = format("./ATC_Declarations/Lab4.2-DO_HA/do_step%d.json", count.index+1)
@@ -366,6 +367,7 @@ count = 2
     hostname = format("bigip%d.example.com",count.index+1)
     ip = format("172.18.100.%d", count.index+1)
     externalip = format("172.16.100.%d", count.index+1)
+    remoteHost = format("172.16.100.%d", count.index+1==1 ? 2 : 1)
     DeviceTrust = false
   })
   filename = format("./ATC_Declarations/Lab4.1-DO/do_step%d.json", count.index+1)
@@ -390,10 +392,12 @@ resource "local_file" "AS3_2" {
 }
 
 resource "local_file" "CFE" {
-  content = templatefile("./templates/cfe.json",{
+  content = templatefile("./templates/cfe.http",{
   label = local.cfe_label_value
+  host = module.bigip_1.mgmtPublicIP
+  auth = module.bigip_2.bigip_password
   })
-  filename = format("./ATC_Declarations/Lab4.4-AS3_Failover/as3_cfe.json")
+  filename = format("./ATC_Declarations/Lab4.4-AS3_Failover/as3_cfe.http")
 }
 
 resource "local_file" "TS" {

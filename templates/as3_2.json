@@ -60,7 +60,7 @@
               "class": "HTTP2_Profile",
               "enforceTlsRequirements": false
           },
-          "example01a": {
+          "example01c": {
               "remark": "basic standard virtual server",
               "layer4": "tcp",
               "pool": "/Common/Shared/pool1",
@@ -86,7 +86,7 @@
                   "bigip": "/Example01/Shared/http2_example01"
               }
           },
-          "example01b": {
+          "example01d": {
               "remark": "basic standard virtual server",
               "layer4": "tcp",
               "pool": "/Common/Shared/pool1",

@@ -117,7 +117,7 @@
           "class": "DeviceTrust",
           "localUsername": "${bigip_admin}",
           "localPassword": "${bigip_admin_password}",
-          "remoteHost": "172.18.100.2",
+          "remoteHost": "${remoteHost}",
           "remoteUsername": "${bigip2_admin}",
           "remotePassword": "${bigip2_admin_password}"
       }%{endif}

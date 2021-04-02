@@ -11,7 +11,7 @@ output bigip_username {
   
 }
 output bigip_1_mgmtIP {
-  value = "https://${module.bigip_2.mgmtPublicIP}"
+  value = "https://${module.bigip_1.mgmtPublicIP}"
   
 }
 output bigip_2_mgmtIP {
