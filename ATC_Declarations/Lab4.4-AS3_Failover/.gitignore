@@ -1,0 +1,10 @@
+# Ignore terraform run-time and state files
+.terraform
+.terraform.lock.hcl
+terraform.tfstate*
+
+# Deliberately ignore any automatic override files
+terraform.tfvars
+terraform.tfvars.json
+*.auto.tfvars
+*.auto.tfvars.json

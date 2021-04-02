@@ -7,7 +7,7 @@ EOD
 
 variable "project_id" {
   type        = string
-  default = "f5-gcs-4261-sales-na-finserv"
+  default = "f5-gcs-4261-sales-agility2021"
   description = <<EOD
 The GCP project identifier to use for testing.
 EOD

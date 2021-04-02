@@ -84,13 +84,14 @@ module "service_accounts" {
   version    = "3.0.1"
   project_id = var.project_id
   prefix     = format("student%d", var.student_id)
-  names      = ["bigip", "backend"]
+  names      = ["bigip", "backend","ts"]
   project_roles = [
     "${var.project_id}=>roles/logging.logWriter",
     "${var.project_id}=>roles/monitoring.metricWriter",
     "${var.project_id}=>roles/monitoring.viewer",
+    "${var.project_id}=>roles/compute.viewer"
   ]
-  generate_keys = false
+  generate_keys = true
 }
 
 # Generate a random password for BIG-IP admin, and store in GCP Secret Manager
@@ -98,6 +99,7 @@ module "bigip_admin_password" {
   source     = "memes/secret-manager/google//modules/random"
   version    = "1.0.2"
   project_id = var.project_id
+  replication_locations = [var.region]
   id         = format("student%d-bigip-admin-key", var.student_id)
   accessors = [
     # Generated service account email address is predictable - use it directly
@@ -140,7 +142,8 @@ module "cfe_bucket" {
   force_destroy = {
     "cfe-state" = true
   }
-  location          = "US"
+  location          = var.region
+  storage_class     = "STANDARD"
   set_admin_roles   = false
   set_creator_roles = false
   set_viewer_roles  = true
@@ -308,52 +311,107 @@ resource "google_compute_firewall" "bigip_backend" {
   }
 }
 
+# Allow BIG-IP instances to reach backend services
+resource "google_compute_firewall" "admin_internal" {
+  project       = var.project_id
+  name          = format("student%d-int-allow-admin-internal", var.student_id)
+  network       = data.google_compute_subnetwork.internal.network
+  description   = format("Allow BIG-IP to backend access on internal (student%d)", var.student_id)
+  direction     = "INGRESS"
+  source_ranges = [
+    "0.0.0.0/0",
+  ]
+  allow {
+    protocol = "tcp"
+    ports = [
+      local.backend_port,
+      22
+    ]
+  }
+  allow {
+    protocol = "icmp"
+  }
+}
+
 # RENDER TEMPLATE FILE
-
-data "template_file" "postman" {
-  # depends_on = [null_resource.ecdsa_certs]
-template = file("./postman_template.json")
-vars = { 
-    GCP_SECRET_ACCESS_KEY = module.bigip_2.bigip_password
-    GCP_ACCESS_KEY_ID = module.bigip_2.service_account
-    BIGIP_ADMIN = module.bigip_2.f5_username
-    BIGIP_ADMIN_PASSWORD = module.bigip_2.bigip_password
-    BIGIP1_MGMT_IP_ADDRESS = module.bigip_1.mgmtPublicIP
-    BIGIP2_MGMT_IP_ADDRESS = module.bigip_2.mgmtPublicIP
-    PROJECT_ID = var.project_id
-    # BIGIP1_MGMT_PRIVATE_ADDRESS = aws_instance.bigip1.private_ip
-    # BIGIP2_MGMT_PRIVATE_ADDRESS = aws_instance.bigip2.private_ip
-    # BIGIP1_TRAFFIC_PRIVATE_ADDRESS = var.bigip1_private_ip[0]
-    # BIGIP2_TRAFFIC_PRIVATE_ADDRESS = var.bigip2_private_ip[0]
-    # WEB1_PRIVATE_IP_ADDRESS = aws_instance.example-a.private_ip
-    # WEB2_PRIVATE_IP_ADDRESS = aws_instance.example-b.private_ip
-    # BIGIP1_DEFAULT_ROUTE = var.bigip1_default_route
-    # BIGIP2_DEFAULT_ROUTE = var.bigip2_default_route
-    # BIGIP1_EXAMPLE01_ADDRESS = var.bigip1_private_ip[1]
-    # BIGIP1_EXAMPLE02_ADDRESS = var.bigip1_private_ip[2]
-    # BIGIP1_EXAMPLE03_ADDRESS = var.bigip1_private_ip[3]
-    # BIGIP1_EXAMPLE04_ADDRESS = var.bigip1_private_ip[4]
-    # BIGIP2_EXAMPLE01_ADDRESS = var.bigip2_private_ip[1]
-    # BIGIP2_EXAMPLE02_ADDRESS = var.bigip2_private_ip[2]
-    # BIGIP2_EXAMPLE03_ADDRESS = var.bigip2_private_ip[3]
-    # BIGIP2_EXAMPLE04_ADDRESS = var.bigip2_private_ip[4]
-    # EXAMPLE01A_ECDSA_CERT = fileexists("example01a.f5lab.dev.cert") ? file("example01a.f5lab.dev.cert") : "null"
-    # EXAMPLE01A_ECDSA_KEY = fileexists("example01a.f5lab.dev.key") ? file("example01a.f5lab.dev.key") : "null"
-    # EXAMPLE01B_ECDSA_CERT = fileexists("example01b.f5lab.dev.cert") ? file("example01b.f5lab.dev.cert") : "null"
-    # EXAMPLE01B_ECDSA_KEY = fileexists("example01b.f5lab.dev.key") ? file("example01b.f5lab.dev.key") : "null"
-}
-}
-
-
-resource "local_file" "postman_rendered" {
-  # depends_on = [null_resource.ecdsa_certs]
-content = data.template_file.postman.rendered
-filename = "postman_rendered.json"
-}
 
 # resource "null_resource" "ecdsa_certs" {
 #     provisioner "local-exec" {
 #     command = "create-ecdsa-certs.sh"
 #   }
 # }
+
+resource "local_file" "Final_DO" {
+count = 2
+  content = templatefile("./templates/do.json",{
+    bigip_admin = module.bigip_1.f5_username
+    bigip_admin_password = module.bigip_1.bigip_password
+    bigip2_admin = module.bigip_2.f5_username
+    bigip2_admin_password = module.bigip_2.bigip_password
+    hostname = format("bigip%d.example.com",count.index+1)
+    ip = format("172.18.100.%d", count.index+1)
+    externalip = format("172.16.100.%d", count.index+1)
+    remoteHost = format("172.16.100.%d", count.index+1==1 ? 2 : 1)
+    DeviceTrust = true
+  })
+  filename = format("./ATC_Declarations/Lab4.2-DO_HA/do_step%d.json", count.index+1)
+}
+
+resource "local_file" "DO" {
+count = 2
+  content = templatefile("./templates/do.json",{
+    bigip_admin = module.bigip_1.f5_username
+    bigip_admin_password = module.bigip_1.bigip_password
+    bigip2_admin = module.bigip_2.f5_username
+    bigip2_admin_password = module.bigip_2.bigip_password
+    hostname = format("bigip%d.example.com",count.index+1)
+    ip = format("172.18.100.%d", count.index+1)
+    externalip = format("172.16.100.%d", count.index+1)
+    remoteHost = format("172.16.100.%d", count.index+1==1 ? 2 : 1)
+    DeviceTrust = false
+  })
+  filename = format("./ATC_Declarations/Lab4.1-DO/do_step%d.json", count.index+1)
+}
+
+resource "local_file" "AS3" {
+  count = 2
+  content = templatefile("./templates/as3.json",{
+  bigip1_example01_address = format("172.16.0.13%d", count.index)
+  bigip2_example01_address = format("172.16.0.13%d", count.index)
+  })
+  filename = format("./ATC_Declarations/Lab4.3-AS3/as3.json")
+}
+
+resource "local_file" "AS3_2" {
+  count = 2
+  content = templatefile("./templates/as3_2.json",{
+  bigip1_example01_address = format("172.16.0.14%d", count.index)
+  bigip2_example01_address = format("172.16.0.14%d", count.index+1)
+  })
+  filename = format("./ATC_Declarations/Lab4.3-AS3/as3_step2.json")
+}
+
+resource "local_file" "CFE" {
+  content = templatefile("./templates/cfe.http",{
+  label = local.cfe_label_value
+  host = module.bigip_1.mgmtPublicIP
+  auth = module.bigip_2.bigip_password
+  })
+  filename = format("./ATC_Declarations/Lab4.4-AS3_Failover/as3_cfe.http")
+}
+
+resource "local_file" "TS" {
+  content = templatefile("./templates/ts.json",{
+    client_email = jsonencode(jsondecode(module.service_accounts.keys["ts"])["client_email"])
+    client_id = jsonencode(jsondecode(module.service_accounts.keys["ts"])["client_id"])
+    private_key_id = jsonencode(jsondecode(module.service_accounts.keys["ts"])["private_key_id"])
+    project_id = jsonencode(jsondecode(module.service_accounts.keys["ts"])["project_id"])
+    private_key = jsonencode(jsondecode(module.service_accounts.keys["ts"])["private_key"])
+
+  })
+  filename = format("./ATC_Declarations/Lab4.5-TS/ts.json")
+}
+
+
+
 
