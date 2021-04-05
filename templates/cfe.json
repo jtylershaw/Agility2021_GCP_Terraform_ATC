@@ -1,0 +1,26 @@
+{
+    "url": "/mgmt/shared/cloud-failover/declare",
+    "method": "POST",
+    "body": {
+        
+        "class": "Cloud_Failover",
+        "environment": "gcp",
+        "externalStorage": {
+            "scopingTags": {
+                "f5-cfe-failover-label": "student1"
+            }
+            
+        },
+        "failoverAddresses": {
+            "enabled":true,
+            "scopingTags": {
+                "f5-cfe-failover-label": "student1"
+            }
+        },
+        "controls": {
+            "class": "Controls",
+            "logLevel": "silly"
+        }
+    
+}
+}

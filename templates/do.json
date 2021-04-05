@@ -117,7 +117,7 @@
           "class": "DeviceTrust",
           "localUsername": "${bigip_admin}",
           "localPassword": "${bigip_admin_password}",
-          "remoteHost": "${remoteHost}",
+          "remoteHost": "/Common/failoverGroup/members/0",
           "remoteUsername": "${bigip2_admin}",
           "remotePassword": "${bigip2_admin_password}"
       }%{endif}
