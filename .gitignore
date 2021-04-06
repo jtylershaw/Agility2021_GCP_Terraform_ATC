@@ -4,7 +4,7 @@
 terraform.tfstate*
 
 # Deliberately ignore any automatic override files
-terraform.tfvars
+foundations/terraform.tfvars
 terraform.tfvars.json
 *.auto.tfvars
 *.auto.tfvars.json
