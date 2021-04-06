@@ -7,14 +7,14 @@
         "environment": "gcp",
         "externalStorage": {
             "scopingTags": {
-                "f5-cfe-failover-label": "student1"
+                "f5-cfe-failover-label": "${student_id}"
             }
             
         },
         "failoverAddresses": {
             "enabled":true,
             "scopingTags": {
-                "f5-cfe-failover-label": "student1"
+                "f5-cfe-failover-label": "${student_id}"
             }
         },
         "controls": {
