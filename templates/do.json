@@ -9,8 +9,7 @@
       "myDns": {
           "class": "DNS",
           "nameServers": [
-              "8.8.8.8",
-              "2001:4860:4860::8844"
+              "169.254.169.254"
           ],
           "search": [
               "f5lab.dev"
@@ -19,9 +18,7 @@
       "myNtp": {
           "class": "NTP",
           "servers": [
-              "0.pool.ntp.org",
-              "1.pool.ntp.org",
-              "2.pool.ntp.org"
+              "169.254.169.254"
           ],
           "timezone": "UTC"
       },
