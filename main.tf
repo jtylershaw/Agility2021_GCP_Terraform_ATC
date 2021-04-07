@@ -106,7 +106,7 @@ module "bigip_admin_password" {
     format("serviceAccount:%s", local.bigip_service_account),
   ]
   length           = 16
-  special_char_set = "@#%&*()-_=+[]<>:?"
+  special_char_set = "#%&()-_=+[]<>:?"
 }
 
 # HA/CFE pairs need a firewall rule to allow ConfigSync traffic
@@ -156,7 +156,7 @@ module "cfe_bucket" {
 # TODO: @memes @jtylershaw @El-Coder - review if F5 module is ready for lab
 #  - F5 BIG-IP module does not perform NIC swap - mgmt is NIC0
 module "bigip_1" {
-  source = "git::https://github.com/f5devcentral/terraform-gcp-bigip-module"
+  source = "git::https://github.com/El-Coder/terraform-gcp-bigip-module"
   prefix = format("student%d-1", var.student_id)
   project_id = var.project_id
   zone = element(random_shuffle.zones.result, 0)
@@ -191,7 +191,7 @@ module "bigip_1" {
 }
 
 module "bigip_2" {
-  source = "git::https://github.com/f5devcentral/terraform-gcp-bigip-module"
+  source = "git::https://github.com/El-Coder/terraform-gcp-bigip-module"
   prefix = format("student%d-2", var.student_id)
   project_id = var.project_id
   zone = element(random_shuffle.zones.result, 1)
@@ -378,6 +378,7 @@ resource "local_file" "AS3" {
   content = templatefile("./templates/as3.json",{
   bigip1_example01_address = format("172.16.0.13%d", count.index)
   bigip2_example01_address = format("172.16.0.13%d", count.index)
+  student_id = var.student_id
   })
   filename = format("./ATC_Declarations/Lab4.3-AS3/as3.json")
 }
@@ -387,15 +388,17 @@ resource "local_file" "AS3_2" {
   content = templatefile("./templates/as3_2.json",{
   bigip1_example01_address = format("172.16.0.14%d", count.index)
   bigip2_example01_address = format("172.16.0.14%d", count.index+1)
+  student_id = var.student_id
   })
   filename = format("./ATC_Declarations/Lab4.3-AS3/as3_step2.json")
 }
 
 resource "local_file" "CFE" {
   content = templatefile("./templates/cfe.json",{
-  label = local.cfe_label_value
-  host = module.bigip_1.mgmtPublicIP
-  auth = module.bigip_2.bigip_password
+  # label = local.cfe_label_value
+  # host = module.bigip_1.mgmtPublicIP
+  # auth = module.bigip_2.bigip_password
+  student_id = var.student_id
   })
   filename = format("./ATC_Declarations/Lab4.4-AS3_Failover/as3_cfe.json")
 }
