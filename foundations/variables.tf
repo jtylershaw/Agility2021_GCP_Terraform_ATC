@@ -38,6 +38,7 @@ variable "apis" {
     "iam.googleapis.com",
     "storage-api.googleapis.com",
     "secretmanager.googleapis.com",
+    "cloudresourcemanager.googleapis.com",
   ]
   description = <<EOD
 A list of GCP APIs to enable in the project.
