@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "../../../../f5-agility-labs-public-cloud"
+		},
+		{
+			"name": "Agility2021_GCP_Terraform_ATC",
+			"path": ".."
+		}
+	],
+	"settings": {}
+}
