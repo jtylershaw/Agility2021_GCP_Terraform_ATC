@@ -2,8 +2,6 @@ variable "listOfNames" {
   type = list(string)
 }
 
-variable "expiration"
-
 resource "google_project_iam_member" "editors" {
   for_each = toset(var.listOfNames)
     project = var.project_id
@@ -29,6 +27,7 @@ resource "google_project_iam_member" "iamAdmin" {
 }
 
 output "studentIDemail" {
-  for_each = toset(var.listOfNames)
-    value = format("user:%s student:%s",each.value, index(listOfNames, value))
+  value = [
+    var.listOfNames.*
+  ]
 }
