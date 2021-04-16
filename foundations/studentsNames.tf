@@ -25,9 +25,3 @@ resource "google_project_iam_member" "iamAdmin" {
     expression  = "request.time < timestamp(\"2021-16-04T00:00:00Z\")"
   }
 }
-
-output "studentIDemail" {
-  value = [
-    var.listOfNames.*
-  ]
-}
