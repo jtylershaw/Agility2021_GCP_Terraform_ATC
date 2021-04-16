@@ -21,7 +21,7 @@
                       "addressDiscovery": "gce",
                       "updateInterval": 20,
                       "tagKey": "f5-service-discovery",
-                      "tagValue": "${student_id}",
+                      "tagValue": "student${student_id}",
                       "addressRealm": "private",
                       "region": "us-east1",
                       "credentialUpdate": false
