@@ -55,7 +55,10 @@
            "class": "SelfIp",
            "address": "${externalip}/32",
            "vlan": "external",
-           "allowService": "none",
+           "allowService": [
+               "tcp:80",
+               "tcp:6514"
+           ],
            "trafficGroup": "traffic-group-local-only"
       },
       "ext_gw_interface": {
