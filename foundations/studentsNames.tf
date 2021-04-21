@@ -15,3 +15,9 @@ resource "google_project_iam_member" "iamAdmin" {
     role    = "roles/iam.roleAdmin"
     member  = format("user:%s",each.value)
 }
+
+output "studentIDemail" {
+  value = [
+    var.listOfNames.*
+  ]
+}
