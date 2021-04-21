@@ -14,9 +14,4 @@ resource "google_project_iam_member" "iamAdmin" {
     project = var.project_id
     role    = "roles/iam.roleAdmin"
     member  = format("user:%s",each.value)
-
-  condition {
-    title       = "studentIAMexpiration"
-    expression  = "request.time < timestamp(\"2021-16-04T00:00:00Z\")"
-  }
 }
