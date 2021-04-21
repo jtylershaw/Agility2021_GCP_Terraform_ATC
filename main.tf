@@ -316,25 +316,25 @@ resource "google_compute_firewall" "bigip_backend" {
   }
 }
 
-# Allow BIG-IP instances to reach backend services
-resource "google_compute_firewall" "admin_internal" {
+# Allow students to access external BIG-IP interfaces
+resource "google_compute_firewall" "public_ingress" {
   project       = var.project_id
-  name          = format("student%d-int-allow-admin-internal", var.student_id)
-  network       = data.google_compute_subnetwork.internal.network
-  description   = format("Allow BIG-IP to backend access on internal (student%d)", var.student_id)
+  name          = format("student%d-ext-allow-public-ingress", var.student_id)
+  network       = data.google_compute_subnetwork.external.network
+  description   = format("Allow public ingress to BIG-IP external (student%d)", var.student_id)
   direction     = "INGRESS"
   source_ranges = [
     "0.0.0.0/0",
   ]
+  target_service_accounts = [
+    local.bigip_service_account,
+  ]
   allow {
     protocol = "tcp"
     ports = [
-      local.backend_port,
-      22
+      80,
+      6514
     ]
-  }
-  allow {
-    protocol = "icmp"
   }
 }
 
