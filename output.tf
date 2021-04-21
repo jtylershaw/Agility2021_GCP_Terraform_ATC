@@ -23,10 +23,10 @@ output bigip_password {
   
 }
 output webapp_1_IP {
-  value = "http://${google_compute_instance.backend[0].network_interface[0].access_config[0].nat_ip}"
+  value = "http://${module.bigip_1.public_addresses[0][1][0]}"
   
 }
 output webapp_2_IP {
-  value = "http://${google_compute_instance.backend[1].network_interface[0].access_config[0].nat_ip}"
+  value = "http://${module.bigip_2.public_addresses[0][1][0]}"
   
 }
