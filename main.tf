@@ -167,6 +167,8 @@ module "bigip_1" {
   gcp_secret_manager_authentication = true
   gcp_secret_name = format("student%d-bigip-admin-key", var.student_id)
   labels = local.cfe_labels
+  DO_URL = "https://github.com/F5Networks/f5-declarative-onboarding/releases/download/v1.20.0/f5-declarative-onboarding-1.20.0-2.noarch.rpm"
+
   mgmt_subnet_ids = [
     {
       subnet_id = data.google_compute_subnetwork.mgmt.self_link
@@ -202,6 +204,7 @@ module "bigip_2" {
   gcp_secret_manager_authentication = true
   gcp_secret_name = format("student%d-bigip-admin-key", var.student_id)
   labels = local.cfe_labels
+  DO_URL = "https://github.com/F5Networks/f5-declarative-onboarding/releases/download/v1.20.0/f5-declarative-onboarding-1.20.0-2.noarch.rpm"
   mgmt_subnet_ids = [
     {
       subnet_id = data.google_compute_subnetwork.mgmt.self_link
