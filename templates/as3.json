@@ -46,7 +46,8 @@
                   "bigip": "/Common/tcp"
               },
               "virtualAddresses": [
-                  "172.16.0.128"
+                "172.16.100.1",
+                "172.16.100.2"
               ],
               "virtualPort": 6514,
               "snat": "auto"
@@ -62,7 +63,8 @@
                   "bigip": "/Common/tcp"
               },
               "virtualAddresses": [
-                  "172.16.0.129"
+                "172.16.100.1",
+                "172.16.100.2"
               ],
               "virtualPort": 80,
               "snat": "auto"

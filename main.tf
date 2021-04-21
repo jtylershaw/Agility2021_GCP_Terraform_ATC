@@ -125,9 +125,11 @@ module "configsync_fw" {
 # E.g. alias IP (VIP) migration on failover, route updates, etc.
 module "cfe_role" {
   source                   = "memes/f5-bigip/google//modules/cfe-role"
-  version = "2.1.0-rc1"
+  version = "2.1.0-rc5"
   target_type = "project"
   target_id   = var.project_id
+  random_id_prefix = format("student%d", var.student_id)
+  title = format("CFE role for student%d", var.student_id)
   members     = [format("serviceAccount:%s", local.bigip_service_account)]
 }
 
@@ -165,6 +167,8 @@ module "bigip_1" {
   gcp_secret_manager_authentication = true
   gcp_secret_name = format("student%d-bigip-admin-key", var.student_id)
   labels = local.cfe_labels
+  DO_URL = "https://github.com/F5Networks/f5-declarative-onboarding/releases/download/v1.20.0/f5-declarative-onboarding-1.20.0-2.noarch.rpm"
+
   mgmt_subnet_ids = [
     {
       subnet_id = data.google_compute_subnetwork.mgmt.self_link
@@ -200,6 +204,7 @@ module "bigip_2" {
   gcp_secret_manager_authentication = true
   gcp_secret_name = format("student%d-bigip-admin-key", var.student_id)
   labels = local.cfe_labels
+  DO_URL = "https://github.com/F5Networks/f5-declarative-onboarding/releases/download/v1.20.0/f5-declarative-onboarding-1.20.0-2.noarch.rpm"
   mgmt_subnet_ids = [
     {
       subnet_id = data.google_compute_subnetwork.mgmt.self_link
@@ -311,25 +316,25 @@ resource "google_compute_firewall" "bigip_backend" {
   }
 }
 
-# Allow BIG-IP instances to reach backend services
-resource "google_compute_firewall" "admin_internal" {
+# Allow students to access external BIG-IP interfaces
+resource "google_compute_firewall" "public_ingress" {
   project       = var.project_id
-  name          = format("student%d-int-allow-admin-internal", var.student_id)
-  network       = data.google_compute_subnetwork.internal.network
-  description   = format("Allow BIG-IP to backend access on internal (student%d)", var.student_id)
+  name          = format("student%d-ext-allow-public-ingress", var.student_id)
+  network       = data.google_compute_subnetwork.external.network
+  description   = format("Allow public ingress to BIG-IP external (student%d)", var.student_id)
   direction     = "INGRESS"
   source_ranges = [
     "0.0.0.0/0",
   ]
+  target_service_accounts = [
+    local.bigip_service_account,
+  ]
   allow {
     protocol = "tcp"
     ports = [
-      local.backend_port,
-      22
+      80,
+      6514
     ]
-  }
-  allow {
-    protocol = "icmp"
   }
 }
 
