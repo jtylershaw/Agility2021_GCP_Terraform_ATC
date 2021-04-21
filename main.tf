@@ -125,9 +125,11 @@ module "configsync_fw" {
 # E.g. alias IP (VIP) migration on failover, route updates, etc.
 module "cfe_role" {
   source                   = "memes/f5-bigip/google//modules/cfe-role"
-  version = "2.1.0-rc1"
+  version = "2.1.0-rc5"
   target_type = "project"
   target_id   = var.project_id
+  random_id_prefix = format("student%d", var.student_id)
+  title = format("CFE role for student%d", var.student_id)
   members     = [format("serviceAccount:%s", local.bigip_service_account)]
 }
 
