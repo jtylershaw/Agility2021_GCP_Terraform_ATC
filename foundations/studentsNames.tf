@@ -17,5 +17,5 @@ resource "google_project_iam_member" "iamAdmin" {
 }
 
 output "studentIDemail" {
-  value = "${list(var.listOfNames.*)}"
+  value = var.listOfNames.*.id
 }
