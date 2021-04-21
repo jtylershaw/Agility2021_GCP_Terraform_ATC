@@ -7,11 +7,6 @@ resource "google_project_iam_member" "editors" {
     project = var.project_id
     role    = "roles/editor"
     member  = format("user:%s",each.value)
-
-  condition {
-    title       = "studentEditorExpiration"
-    expression  = "request.time < timestamp(\"2021-16-04T00:00:00Z\")"
-  }
 }
 
 resource "google_project_iam_member" "iamAdmin" {
