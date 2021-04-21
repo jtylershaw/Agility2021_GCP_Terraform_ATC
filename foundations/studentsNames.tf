@@ -18,6 +18,6 @@ resource "google_project_iam_member" "iamAdmin" {
 
 output "studentIDemail" {
   value = [
-    var.listOfNames.*
+    var.listOfNames.[count.index]
   ]
 }
