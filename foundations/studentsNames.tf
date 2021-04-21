@@ -18,6 +18,8 @@ resource "google_project_iam_member" "iamAdmin" {
 
 output "studentIDemail" {
   value = [
-    var.listOfNames.[count.index]
+    for_each = toset(var.listOfNames)
+    var.listOfNames[index]
+    description = "Student"
   ]
 }
