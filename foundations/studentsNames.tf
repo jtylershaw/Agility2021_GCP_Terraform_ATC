@@ -17,6 +17,5 @@ resource "google_project_iam_member" "iamAdmin" {
 }
 
 output "studentIDemail" {
-  count = 3
   value = var.listOfNames.[count.index]
 }
