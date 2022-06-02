@@ -181,7 +181,7 @@ module "bigip_1" {
       subnet_id = data.google_compute_subnetwork.external.self_link
       public_ip = true
       private_ip_primary = "172.16.100.1"
-      private_ip_secondary = "172.16.0.128/29"
+      private_ip_secondary = "172.16.100.128/29"
     },
   ]
   internal_subnet_ids = [
